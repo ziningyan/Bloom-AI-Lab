@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { ArrowLeft, Search, Filter, Share2, Heart, Info, Zap, X, Shield, Activity, Dna, Globe, Cpu } from "lucide-react";
+import { ArrowLeft, Search, Filter, Share2, Heart, Info, Zap, X, Shield, Activity, Dna, Globe, Cpu, Download } from "lucide-react";
 
 import { useBloom } from "../context/BloomContext";
 import { SpeciesCase } from "../types";
@@ -12,6 +12,15 @@ interface BloomArchiveProps {
 export default function BloomArchive({ onBack }: BloomArchiveProps) {
   const [selectedCase, setSelectedCase] = useState<SpeciesCase | null>(null);
   const { archiveItems } = useBloom();
+
+  const handleDownload = (url: string, title: string) => {
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${title}.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   const DetailView = ({ item }: { item: SpeciesCase }) => (
     <motion.div
@@ -26,12 +35,26 @@ export default function BloomArchive({ onBack }: BloomArchiveProps) {
       />
       
       <div className="liquid-glass-strong relative z-10 grid h-full max-h-[900px] w-full max-w-6xl overflow-hidden rounded-[3rem] lg:grid-cols-2">
-        <button 
-          onClick={() => setSelectedCase(null)}
-          className="absolute right-8 top-8 z-20 flex h-12 w-12 items-center justify-center rounded-full bg-white/10 text-white transition-transform hover:scale-110 active:scale-90"
-        >
-          <X className="h-6 w-6" />
-        </button>
+          <div className="absolute top-8 left-8 z-20 flex gap-2">
+            <button 
+              onClick={() => handleDownload(item.image, item.title)}
+              className="flex h-12 w-12 items-center justify-center rounded-full bg-white/10 text-white transition-transform hover:scale-110 active:scale-90"
+            >
+              <Download className="h-6 w-6" />
+            </button>
+            <button 
+              className="flex h-12 w-12 items-center justify-center rounded-full bg-white/10 text-white transition-transform hover:scale-110 active:scale-90"
+            >
+              <Share2 className="h-6 w-6" />
+            </button>
+          </div>
+
+          <button 
+            onClick={() => setSelectedCase(null)}
+            className="absolute right-8 top-8 z-20 flex h-12 w-12 items-center justify-center rounded-full bg-white/10 text-white transition-transform hover:scale-110 active:scale-90"
+          >
+            <X className="h-6 w-6" />
+          </button>
 
         {/* Left: Visual */}
         <div className="relative h-full overflow-hidden bg-white/5">
@@ -206,6 +229,13 @@ export default function BloomArchive({ onBack }: BloomArchiveProps) {
                   className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
                   referrerPolicy="no-referrer"
                 />
+                {item.category === '用户演化' && (
+                  <div className="absolute top-4 right-4 z-10">
+                    <span className="bg-blue-500/20 backdrop-blur-md border border-blue-500/20 text-blue-400 text-[10px] font-display font-bold uppercase tracking-widest px-3 py-1 rounded-full">
+                      新物种
+                    </span>
+                  </div>
+                )}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
                 
                 {/* Overlay Controls */}
@@ -216,6 +246,15 @@ export default function BloomArchive({ onBack }: BloomArchiveProps) {
                       className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 backdrop-blur-md hover:bg-white/20"
                     >
                       <Heart className="h-4 w-4" />
+                    </button>
+                    <button 
+                      onClick={(e) => { 
+                        e.stopPropagation(); 
+                        handleDownload(item.image, item.title);
+                      }}
+                      className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 backdrop-blur-md hover:bg-white/20"
+                    >
+                      <Download className="h-4 w-4" />
                     </button>
                     <button 
                       onClick={(e) => { e.stopPropagation(); /* Handle share */ }}

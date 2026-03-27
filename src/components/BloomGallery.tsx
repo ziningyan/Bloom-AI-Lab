@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { ArrowLeft, Sparkles, Share2, Heart, ExternalLink } from 'lucide-react';
+import { ArrowLeft, Sparkles, Share2, Heart, ExternalLink, Download } from 'lucide-react';
 
 interface BloomGalleryProps {
   onBack: () => void;
@@ -11,6 +11,15 @@ import { useBloom } from '../context/BloomContext';
 
 export default function BloomGallery({ onBack, onEnterEditor }: BloomGalleryProps) {
   const { galleryItems } = useBloom();
+
+  const handleDownload = (url: string, title: string) => {
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${title}.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   return (
     <div className="min-h-screen w-full bg-black text-white font-sans selection:bg-white/20">
@@ -82,11 +91,27 @@ export default function BloomGallery({ onBack, onEnterEditor }: BloomGalleryProp
                     className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
                     referrerPolicy="no-referrer"
                   />
+                  {item.artist === '匿名创作者' && (
+                    <div className="absolute top-4 left-4 z-10">
+                      <span className="bg-white/20 backdrop-blur-md border border-white/20 text-white text-[10px] font-display font-bold uppercase tracking-widest px-3 py-1 rounded-full">
+                        新作品
+                      </span>
+                    </div>
+                  )}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100">
                     <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between">
                       <div className="flex gap-2">
                         <button className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 backdrop-blur-md transition-transform hover:scale-110">
                           <Heart className="h-4 w-4" />
+                        </button>
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDownload(item.imageUrl, item.title);
+                          }}
+                          className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 backdrop-blur-md transition-transform hover:scale-110"
+                        >
+                          <Download className="h-4 w-4" />
                         </button>
                         <button className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 backdrop-blur-md transition-transform hover:scale-110">
                           <Share2 className="h-4 w-4" />

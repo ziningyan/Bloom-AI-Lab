@@ -2,6 +2,7 @@ export interface GeneratedImage {
   id: string;
   url: string;
   prompt: string;
+  name?: string;
   timestamp: number;
 }
 
@@ -10,6 +11,7 @@ export type ElementType = 'flower' | 'leaf' | 'stem' | 'image';
 export interface CanvasElement {
   id: string;
   type: ElementType;
+  name?: string;
   x: number;
   y: number;
   width: number;

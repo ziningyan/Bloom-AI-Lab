@@ -14,7 +14,8 @@ import {
   Upload,
   Check,
   BookOpen,
-  ExternalLink
+  ExternalLink,
+  Edit2
 } from 'lucide-react';
 import { Stage, Layer, Rect, Circle, Image as KonvaImage, Transformer } from 'react-konva';
 import useImage from 'use-image';
@@ -35,7 +36,7 @@ const CanvasImage = ({ element, isSelected, onSelect, onChange }: {
   onSelect: () => void;
   onChange: (newAttrs: Partial<CanvasElement>) => void;
 }) => {
-  const [img] = useImage(element.imageUrl || '');
+  const [img] = useImage(element.imageUrl || '', 'anonymous');
   const shapeRef = useRef<any>(null);
   const trRef = useRef<any>(null);
 
@@ -174,6 +175,9 @@ export default function BloomEditor({
   const [publishSuccess, setPublishSuccess] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
   const [isGeneratingElement, setIsGeneratingElement] = useState<ElementType | null>(null);
+  const [editingImageId, setEditingImageId] = useState<string | null>(null);
+  const [editingName, setEditingName] = useState('');
+  const [publishTitle, setPublishTitle] = useState('');
   
   const { publishToGallery, publishToArchive } = useBloom();
   const stageRef = useRef<any>(null);
@@ -231,6 +235,7 @@ export default function BloomEditor({
           id: Math.random().toString(36).substr(2, 9),
           url: imageUrl,
           prompt,
+          name: prompt,
           timestamp: Date.now(),
         };
         setGallery(prev => [newImg, ...prev]);
@@ -243,10 +248,11 @@ export default function BloomEditor({
     }
   };
 
-  const addElement = (type: ElementType, imageUrl?: string) => {
+  const addElement = (type: ElementType, imageUrl?: string, name?: string) => {
     const newElement: CanvasElement = {
       id: Math.random().toString(36).substr(2, 9),
       type,
+      name: name || (type === 'image' ? '新图片' : type === 'flower' ? '花朵' : type === 'leaf' ? '叶片' : '茎干'),
       x: stageSize.width / 2 - 300,
       y: stageSize.height / 2 - 300,
       width: 600,
@@ -330,6 +336,7 @@ export default function BloomEditor({
 
   const handlePublish = () => {
     if (!stageRef.current) return;
+    setPublishTitle(prompt || '未命名作品');
     setIsPublishModalOpen(true);
   };
 
@@ -342,7 +349,7 @@ export default function BloomEditor({
       
       if (publishTarget === 'gallery') {
         publishToGallery({
-          title: prompt || '未命名设计',
+          title: publishTitle || '未命名设计',
           description: '由用户在 Bloom 设计室创作。',
           imageUrl: dataURL,
           artist: '匿名创作者',
@@ -350,7 +357,7 @@ export default function BloomEditor({
         });
       } else {
         // AI Vision for Archive Title and Description
-        let aiTitle = prompt || '新演化实体';
+        let aiTitle = publishTitle || '新演化实体';
         let aiDescription = '这是一份由用户通过神经引擎演化而来的新物种档案。';
         
         try {
@@ -504,6 +511,7 @@ export default function BloomEditor({
                               id: Math.random().toString(36).substr(2, 9),
                               url: ev.target?.result as string,
                               prompt: '上传的图片',
+                              name: file.name.split('.')[0],
                               timestamp: Date.now(),
                             };
                             setGallery(prev => [newImg, ...prev]);
@@ -525,12 +533,30 @@ export default function BloomEditor({
                       <div 
                         key={img.id}
                         className="group relative aspect-square rounded-xl overflow-hidden liquid-glass cursor-pointer"
-                        onClick={() => addElement('image', img.url)}
                       >
-                        <img src={img.url} alt={img.prompt} className="w-full h-full object-cover" />
-                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                          <Plus className="h-6 w-6" />
+                        <img 
+                          src={img.url} 
+                          alt={img.name || img.prompt} 
+                          className="w-full h-full object-cover" 
+                          onClick={() => addElement('image', img.url, img.name)}
+                        />
+                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center transition-opacity pointer-events-none">
+                          <Plus className="h-6 w-6 mb-2" />
+                          <span className="text-[10px] font-display font-bold uppercase tracking-widest text-white/60">
+                            {img.name || '未命名'}
+                          </span>
                         </div>
+                        
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setEditingImageId(img.id);
+                            setEditingName(img.name || img.prompt);
+                          }}
+                          className="absolute top-2 right-2 p-1.5 rounded-lg bg-black/40 text-white/60 hover:text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <Edit2 className="h-3 w-3" />
+                        </button>
                       </div>
                     ))
                   )}
@@ -567,9 +593,14 @@ export default function BloomEditor({
                           <div className="h-4 w-4 rounded-full bg-white/20" />
                         )}
                       </div>
-                      <span className="flex-1 text-[10px] font-display font-bold uppercase tracking-[0.2em] truncate">
-                        {el.type} {el.id.substr(0, 4)}
-                      </span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[10px] font-display font-bold uppercase tracking-[0.2em] truncate">
+                          {el.name || el.type}
+                        </p>
+                        <p className="text-[8px] text-white/30 uppercase tracking-widest">
+                          Layer {el.zIndex} • {el.id.substr(0, 4)}
+                        </p>
+                      </div>
                       <button 
                         onClick={(e) => {
                           e.stopPropagation();
@@ -856,7 +887,31 @@ export default function BloomEditor({
                     </div>
 
                     <div className="space-y-4">
-                      <p className="text-sm text-white/50 mb-6">请选择您想要发布到的目标位置：</p>
+                      <div className="mb-6 overflow-hidden rounded-2xl border border-white/10 bg-white/5">
+                        <div className="aspect-[4/5] w-full relative">
+                          <img 
+                            src={stageRef.current?.toDataURL({ pixelRatio: 1 })} 
+                            alt="Preview" 
+                            className="absolute inset-0 h-full w-full object-cover"
+                          />
+                        </div>
+                        <div className="p-3 text-center bg-white/5">
+                          <span className="text-[10px] font-display font-bold uppercase tracking-widest text-white/40">作品预览</span>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2 mb-6">
+                        <label className="text-[10px] font-display font-bold uppercase tracking-widest text-white/40">作品名称</label>
+                        <input 
+                          type="text"
+                          value={publishTitle}
+                          onChange={(e) => setPublishTitle(e.target.value)}
+                          className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm outline-none focus:border-white/20 transition-colors"
+                          placeholder="输入作品名称..."
+                        />
+                      </div>
+
+                      <p className="text-sm text-white/50 mb-4">请选择您想要发布到的目标位置：</p>
                       
                       <button 
                         onClick={() => setPublishTarget('gallery')}
@@ -905,6 +960,70 @@ export default function BloomEditor({
                     </button>
                   </>
                 )}
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
+
+        {/* Rename Modal */}
+        <AnimatePresence>
+          {editingImageId && (
+            <div className="fixed inset-0 z-[110] flex items-center justify-center p-6">
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setEditingImageId(null)}
+                className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+              />
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                className="relative w-full max-w-sm liquid-glass-strong rounded-[2rem] p-8 overflow-hidden"
+              >
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-xl font-display font-bold tracking-tight">重命名图片</h3>
+                  <button onClick={() => setEditingImageId(null)} className="p-2 hover:bg-white/5 rounded-full transition-colors">
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-display font-bold uppercase tracking-widest text-white/40">新名称</label>
+                    <input 
+                      type="text"
+                      value={editingName}
+                      onChange={(e) => setEditingName(e.target.value)}
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm outline-none focus:border-white/20 transition-colors"
+                      placeholder="输入图片名称..."
+                      autoFocus
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          const updatedGallery = gallery.map(img => 
+                            img.id === editingImageId ? { ...img, name: editingName } : img
+                          );
+                          setGallery(updatedGallery);
+                          setEditingImageId(null);
+                        }
+                      }}
+                    />
+                  </div>
+
+                  <button 
+                    onClick={() => {
+                      const updatedGallery = gallery.map(img => 
+                        img.id === editingImageId ? { ...img, name: editingName } : img
+                      );
+                      setGallery(updatedGallery);
+                      setEditingImageId(null);
+                    }}
+                    className="w-full mt-4 liquid-glass-strong py-4 rounded-xl font-display font-bold uppercase tracking-widest text-xs hover:scale-[1.02] transition-transform"
+                  >
+                    保存修改
+                  </button>
+                </div>
               </motion.div>
             </div>
           )}

@@ -9,9 +9,12 @@ import {
   Linkedin, 
   Instagram, 
   Menu,
-  Plus
+  Plus,
+  Volume2,
+  VolumeX
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
+import { useRef, useEffect } from "react";
 import BloomEditor from "./components/BloomEditor";
 import BloomGallery from "./components/BloomGallery";
 import BloomAbout from "./components/BloomAbout";
@@ -32,6 +35,26 @@ function AppContent() {
   const [view, setView] = useState<'hero' | 'editor' | 'gallery' | 'about' | 'processing' | 'archive'>('hero');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isEcosystemModalOpen, setIsEcosystemModalOpen] = useState(false);
+  const [isMuted, setIsMuted] = useState(true);
+  const audioRef = useRef<HTMLAudioElement>(null);
+
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.volume = 0.3;
+      if (!isMuted) {
+        audioRef.current.play().catch(err => {
+          console.log("Autoplay prevented:", err);
+          setIsMuted(true);
+        });
+      } else {
+        audioRef.current.pause();
+      }
+    }
+  }, [isMuted]);
+
+  const toggleMusic = () => {
+    setIsMuted(!isMuted);
+  };
 
   const NavOverlay = () => (
     <motion.div 
@@ -75,6 +98,12 @@ function AppContent() {
       <AnimatePresence>
         {isMenuOpen && <NavOverlay />}
       </AnimatePresence>
+
+      <audio 
+        ref={audioRef}
+        src="https://assets.mixkit.co/music/preview/mixkit-dreaming-big-31.mp3" 
+        loop
+      />
 
       <AnimatePresence>
         {isEcosystemModalOpen && (
@@ -239,25 +268,33 @@ function AppContent() {
                 <div className="liquid-glass-strong absolute inset-4 flex flex-col rounded-3xl p-6 lg:inset-6 lg:p-10">
                   
                   {/* Navigation */}
-                  <nav className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <img 
-                        src="https://i.postimg.cc/HL2kx56b/lai-kan-wo-de-xin-zuo-pin-1-bu-yuan-tou-lu-xing-ming-de-liang-sheng-lai-zi-xiao-hong-shu-wang-ye-ban.jpg" 
-                        alt="Bloom Logo" 
-                        className="h-8 w-8 rounded-lg object-cover border border-white/10"
-                        referrerPolicy="no-referrer"
-                      />
-                      <span className="text-2xl font-display font-bold tracking-tighter">bloom</span>
-                    </div>
-                    
-                    <button 
-                      onClick={() => setIsMenuOpen(true)}
-                      className="liquid-glass group flex items-center gap-2 rounded-full px-4 py-2 text-sm transition-transform hover:scale-105 active:scale-95"
-                    >
-                      <span>菜单</span>
-                      <Menu className="h-4 w-4" />
-                    </button>
-                  </nav>
+                    <nav className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <img 
+                          src="https://i.postimg.cc/HL2kx56b/lai-kan-wo-de-xin-zuo-pin-1-bu-yuan-tou-lu-xing-ming-de-liang-sheng-lai-zi-xiao-hong-shu-wang-ye-ban.jpg" 
+                          alt="Bloom Logo" 
+                          className="h-8 w-8 rounded-lg object-cover border border-white/10"
+                          referrerPolicy="no-referrer"
+                        />
+                        <span className="text-2xl font-display font-bold tracking-tighter">bloom</span>
+                      </div>
+                      
+                      <div className="flex items-center gap-3">
+                        <button 
+                          onClick={toggleMusic}
+                          className="liquid-glass p-2 rounded-full transition-all hover:scale-110 active:scale-95 text-white/60 hover:text-white"
+                        >
+                          {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+                        </button>
+                        <button 
+                          onClick={() => setIsMenuOpen(true)}
+                          className="liquid-glass group flex items-center gap-2 rounded-full px-4 py-2 text-sm transition-transform hover:scale-105 active:scale-95"
+                        >
+                          <span>菜单</span>
+                          <Menu className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </nav>
 
                   {/* Hero Center */}
                   <div className="flex flex-1 flex-col items-center justify-center text-center">
@@ -407,7 +444,7 @@ function AppContent() {
                       className="liquid-glass mt-4 flex cursor-pointer items-center gap-4 rounded-3xl p-4 transition-transform hover:scale-105"
                     >
                       <img 
-                        src="https://i.postimg.cc/g0zKtx2V/20260327-113426.jpg" 
+                        src="https://i.postimg.cc/HL2kx56b/lai-kan-wo-de-xin-zuo-pin-1-bu-yuan-tou-lu-xing-ming-de-liang-sheng-lai-zi-xiao-hong-shu-wang-ye-ban.jpg" 
                         alt="Plant Sculpting" 
                         className="h-16 w-24 rounded-xl object-cover border border-white/10"
                         referrerPolicy="no-referrer"
